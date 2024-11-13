@@ -1,0 +1,11 @@
+streamlit
+yfinance
+pandas
+numpy
+statsmodels
+pandas_datareader
+matplotlib
+scikit-learn
+alpha_vantage
+plotly
+cvxpy
