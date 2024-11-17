@@ -1,0 +1,22 @@
+Ticker,Sector_Returns
+AAPL,Technology_Returns
+MSFT,Technology_Returns
+NVDA,Technology_Returns
+JPM,Financials_Returns
+GS,Financials_Returns
+BAC,Financials_Returns
+JNJ,Healthcare_Returns
+UNH,Healthcare_Returns
+LLY,Healthcare_Returns
+XOM,Energy_Returns
+CVX,Energy_Returns
+EOG,Energy_Returns
+MCD,Consumer Discretionary_Returns
+NKE,Consumer Discretionary_Returns
+HD,Consumer Discretionary_Returns
+CAT,Industrials_Returns
+LMT,Industrials_Returns
+UPS,Industrials_Returns
+NEE,Utilities_Returns
+DUK,Utilities_Returns
+SO,Utilities_Returns

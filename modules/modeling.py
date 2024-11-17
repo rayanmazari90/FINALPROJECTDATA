@@ -1,11 +1,11 @@
-# modules/modeling.py
-
 import streamlit as st
 import pandas as pd
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np
+
+
 def linear_regression_models():
     st.header("Linear Regression Models")
 
@@ -31,6 +31,11 @@ def linear_regression_models():
         sector_var = sector_map[ticker]
         X_vars = macro_vars + stock_specific_vars + ([sector_var] if sector_var in ml_data.columns else [])
         X = ml_data[X_vars]
+
+        # Align indices of y and X
+        X = X.loc[y.index]
+        y = y.loc[X.index]
+
         X = sm.add_constant(X)
 
         if not X.empty and not y.empty:
@@ -44,7 +49,6 @@ def linear_regression_models():
 
     # Display models with R²
     models_df = pd.DataFrame.from_dict(models_summary, orient='index')
-    
 
     st.write("Model R-squared values:")
     st.dataframe(models_df)
@@ -56,21 +60,59 @@ def linear_regression_models():
     st.dataframe(high_r2_models)
 
     if not high_r2_models.empty:
-        # Option to select a ticker and display results
-        selected_ticker = st.selectbox("Select a ticker to view model details", high_r2_models.index)
-        if selected_ticker:
-            st.write(f"Model Summary for {selected_ticker}:")
-            st.text(predictions_dict[selected_ticker]['model'].summary())
+        # Ensure the available tickers for selection match the filtered models
+        available_tickers = high_r2_models.index.intersection(predictions_dict.keys())
+        if not available_tickers.empty:
+            selected_ticker = st.selectbox("Select a ticker to view model details", available_tickers)
+            if selected_ticker:
+                st.write(f"Model Summary for {selected_ticker}:")
+                st.text(predictions_dict[selected_ticker]['model'].summary())
 
-            # Calculate evaluation metrics
-            y_actual = predictions_dict[selected_ticker]['actual']
-            y_pred = predictions_dict[selected_ticker]['predicted']
-            mae = mean_absolute_error(y_actual, y_pred)
-            rmse = np.sqrt(mean_squared_error(y_actual, y_pred))
+                # Calculate evaluation metrics
+                y_actual = predictions_dict[selected_ticker]['actual']
+                y_pred = predictions_dict[selected_ticker]['predicted']
+                mae = mean_absolute_error(y_actual, y_pred)
+                rmse = np.sqrt(mean_squared_error(y_actual, y_pred))
 
-            # Plot actual vs. predicted returns
-            fig, ax = plt.subplots(figsize=(12, 6))
-            y_actual.plot(ax=ax, label='Actual Returns')
-            y_pred.plot(ax=ax, label='Predicted Returns', linestyle='--')
-            ax.set_title
+                # Plot actual vs. predicted returns
+                fig, ax = plt.subplots(figsize=(12, 6))
+                y_actual.index = pd.to_datetime(ml_data.Date)  # Ensure dates are datetime
+                y_pred.index =pd.to_datetime(ml_data.Date)  # Align predicted values with actual dates
+                y_actual.plot(ax=ax, label='Actual Returns')
+                y_pred.plot(ax=ax, label='Predicted Returns', linestyle='--')
+                ax.set_title(f"{selected_ticker} - Actual vs Predicted Returns")
+                ax.set_xlabel("Date")
+                ax.set_ylabel("Returns")
+                ax.legend()
+                st.pyplot(fig)
+        else:
+            st.warning("No tickers available for selection.")
+    else:
+        st.write("No models meet the R² threshold.")
+
+    with st.expander("Detailed Explanation of Linear Regression Models"):
+        st.markdown("""
+        ### What We Do in This Section:
+        - **Filtering Stocks**: Run individual linear regression models for each stock and filter based on R² values.
+        - **Building Multiple Models**: Create separate regression models for all stocks using macroeconomic, stock-specific, and sector variables.
+        - **Evaluation**: Identify and prioritize high-performing models (R² > selected threshold) for downstream tasks like portfolio optimization.
+
+        ### Key Steps:
+        1. **Independent Variables**:
+            - Macroeconomic indicators: GDP Growth, Unemployment Rate, CPI, etc.
+            - Stock-specific financial ratios: Debt-to-Equity Ratio, ROE, ROA, etc.
+            - Sector trends: Returns of the sector ETF for the stock.
+        2. **Dependent Variable**:
+            - Stock returns for each stock, calculated as percentage changes in adjusted closing prices.
+
+        ### Insights:
+        - High R² values indicate strong models but must balance with avoiding overfitting.
+        - Models with R² > 0.7 are filtered for downstream optimization.
+        - Visualizations, such as actual vs. predicted returns, help evaluate the models' predictive performance.
+
+        ### Limitations:
+        - Multicollinearity in independent variables could affect the regression model's stability.
+        - Linear regression assumes a linear relationship, which may not fully capture complex market dynamics.
+        """)
+
     st.session_state['models_summary'] = models_summary

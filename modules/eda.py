@@ -76,11 +76,26 @@ def eda_feature_selection():
             st.write("Not enough data to compute correlation matrix.")
 
         # Provide insights
+        
+
+    else:
+        st.write("Please select at least one variable to visualize.")
+    # Explanation Dropdown
+    with st.expander("Explanation of Graphs and Multicollinearity"):
         st.subheader("Insights")
         st.write("Based on the visualizations, you can observe the following:")
         st.write("- **Distributions:** Skewness or kurtosis in the distributions may indicate outliers or non-normality.")
         st.write("- **Time Series Trends:** Upward or downward trends over time may suggest the presence of trends or seasonality.")
         st.write("- **Correlations:** High correlation between variables may indicate multicollinearity, which can affect regression models.")
+        st.markdown("""
+        ### Types of Graphs
+        - **Histogram**: Displays the distribution of values for a variable, helping to identify skewness or outliers.
+        - **Boxplot**: Highlights the spread and potential outliers for a variable.
+        - **Time Series Plot**: Shows how a variable changes over time, identifying trends or seasonality.
+        - **Correlation Matrix (Heatmap)**: Displays pairwise correlations between variables, with high correlations (> 0.8) potentially indicating multicollinearity.
 
-    else:
-        st.write("Please select at least one variable to visualize.")
+        ### Multicollinearity and Its Impact
+        - **Definition**: Multicollinearity occurs when two or more independent variables are highly correlated.
+        - **Problem**: It can distort the coefficients in regression models, making them unreliable.
+        - **Solution**: Consider removing one of the correlated variables or using techniques like Principal Component Analysis (PCA) to reduce dimensionality.
+        """)
