@@ -10,5 +10,5 @@ pandas-datareader
 cvxpy
 graphviz
 scipy
-PIL
-pathlib
+pillow
+alpha_vantage
