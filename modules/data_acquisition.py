@@ -12,11 +12,12 @@ def data_acquisition():
     st.header("Data Acquisition and Preprocessing")
     
     # User inputs for date range
+    st.write("yahoo finance")
     start_date = st.date_input("Start Date", datetime.date(2013, 1, 1))
     end_date = st.date_input("End Date", datetime.date(2023, 10, 31))
     
     # Alpha Vantage API key input (simulated, not used in this case)
-    api_key = st.text_input("Enter your Alpha Vantage API key (simulated input)", type="password")
+    api_key = st.text_input("Macro data : Enter your Alpha Vantage API key (simulated input)", type="password")
     if not api_key:
         st.warning("Please enter your Alpha Vantage API key.")
         return
