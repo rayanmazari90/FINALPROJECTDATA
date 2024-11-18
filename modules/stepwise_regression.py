@@ -10,6 +10,22 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import matplotlib.pyplot as plt
 
+def backward_elimination(model, X, y, significance_level=0.05):
+    """
+    Perform backward elimination by iteratively removing the least significant variable.
+    """
+    while True:
+        p_values = model.pvalues.drop('const', errors='ignore')
+        max_pval = p_values.max()
+        if max_pval > significance_level:
+            excluded_var = p_values.idxmax()
+            X = X.drop(columns=[excluded_var])
+            X_const = sm.add_constant(X)
+            model = sm.OLS(y, X_const).fit()
+        else:
+            break
+    return model, X
+
 def stepwise_regression():
     st.header("Stepwise Regression for Feature Selection")
 
@@ -35,7 +51,6 @@ def stepwise_regression():
 
     for ticker in high_r2_tickers:
 
-
         y = ml_data[f'{ticker}_Returns']
         stock_specific_vars = [
             f'{ticker}_Debt_Equity',
@@ -59,7 +74,6 @@ def stepwise_regression():
         initial_model = sm.OLS(y, X_with_const).fit()
         initial_r_squared = initial_model.rsquared
 
-
         # Standardize features
         scaler = StandardScaler()
         X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns, index=X.index)
@@ -67,7 +81,7 @@ def stepwise_regression():
         # Linear regression model for feature selection
         lr = LinearRegression()
 
-        # Perform forward or backward stepwise regression
+        # Perform forward stepwise regression
         sfs = SequentialFeatureSelector(
             lr,
             n_features_to_select="auto",
@@ -77,25 +91,24 @@ def stepwise_regression():
             n_jobs=-1
         )
 
-        
         sfs.fit(X_scaled, y)
         selected_features = X.columns[sfs.get_support()]
 
-        # Build final model with selected features
+        # Build initial model with selected features
         X_selected = X[selected_features]
         X_selected_const = sm.add_constant(X_selected)
-        final_model = sm.OLS(y, X_selected_const).fit()
+        initial_selected_model = sm.OLS(y, X_selected_const).fit()
+
+        # Perform backward elimination based on p-values
+        final_model, X_final = backward_elimination(initial_selected_model, X_selected, y)
 
         # Store the final model details
         st.session_state['ticker_models'][ticker] = {
             'intercept': final_model.params.get('const', 0.0),
             'coefficients': final_model.params.drop('const', errors='ignore').to_dict(),
-            'features': list(selected_features),
+            'features': list(X_final.columns),
             'r_squared': final_model.rsquared
         }
-
-        # Optional: Display summary for debugging
-
 
     st.success("Stepwise Regression completed for all tickers!")
 
@@ -127,7 +140,7 @@ def stepwise_regression():
         initial_r_squared = initial_model.rsquared
 
         st.subheader("Initial Model Summary (Before Stepwise Regression):")
-        model_summ= initial_model.summary().as_text()
+        model_summ = initial_model.summary().as_text()
         st.code(model_summ, language="text")
 
         # Standardize features
@@ -174,35 +187,43 @@ def stepwise_regression():
         # Build model with selected features
         X_selected = X[selected_features]
         X_selected_const = sm.add_constant(X_selected)
-        final_model = sm.OLS(y, X_selected_const).fit()
-        final_r_squared = final_model.rsquared
+        initial_selected_model = sm.OLS(y, X_selected_const).fit()
 
-        st.subheader("Final Model Summary (After Stepwise Regression):")
+        # Perform backward elimination based on p-values
+        final_model, X_final = backward_elimination(initial_selected_model, X_selected, y)
+
+        st.subheader("Final Model Summary (After Stepwise Regression and Backward Elimination):")
         st.code(final_model.summary().as_text(), language="text")
 
         # Display R-squared comparison
         st.subheader("R² Value Comparison:")
         st.write(f"**Before Stepwise Regression:** R² = {initial_r_squared:.6f}")
-        st.write(f"**After Stepwise Regression:** R² = {final_r_squared:.6f}")
+        st.write(f"**After Stepwise Regression:** R² = {final_model.rsquared:.6f}")
 
         # Predict and evaluate
-        predictions = final_model.predict(X_selected_const)
+        predictions = final_model.predict(sm.add_constant(X_final))
         mae = mean_absolute_error(y, predictions)
         rmse = np.sqrt(mean_squared_error(y, predictions))
-        st.write(f"Mean Absolute Error (MAE): {mae:.6f}")
-        st.write(f"Root Mean Squared Error (RMSE): {rmse:.6f}")
+        st.write(f"**Mean Absolute Error (MAE):** {mae:.6f}")
+        st.write(f"**Root Mean Squared Error (RMSE):** {rmse:.6f}")
 
-        st.subheader("Actual vs. Predicted Returns After Stepwise Regression")
+        st.subheader("Actual vs. Predicted Returns After Stepwise Regression and Backward Elimination")
         fig, ax = plt.subplots(figsize=(12, 6))
 
         # Align actual and predicted values with the Date column
-        date_column = ml_data.loc[y.index, 'Date']  # Extract the corresponding Date column
-        y.index = date_column  # Align the index of y with the Date column
-        predictions.index = date_column  # Align the index of predictions with the Date column
+        if 'Date' in ml_data.columns:
+            date_column = ml_data.loc[y.index, 'Date']  # Extract the corresponding Date column
+            y_aligned = y.copy()
+            predictions_aligned = predictions.copy()
+            y_aligned.index = date_column
+            predictions_aligned.index = date_column
+        else:
+            y_aligned = y
+            predictions_aligned = predictions
 
         # Plot the actual and predicted returns
-        y.plot(ax=ax, label='Actual Returns', color='blue')
-        predictions.plot(ax=ax, label='Predicted Returns', linestyle='--', color='orange')
+        y_aligned.plot(ax=ax, label='Actual Returns', color='blue')
+        predictions_aligned.plot(ax=ax, label='Predicted Returns', linestyle='--', color='orange')
 
         # Add title, labels, and legend
         ax.set_title(f'{selected_ticker} Actual vs. Predicted Returns')
@@ -215,18 +236,19 @@ def stepwise_regression():
 
         # Store the final model and selected features in session state
         st.session_state[f'{selected_ticker}_stepwise_model'] = final_model
-        st.session_state[f'{selected_ticker}_selected_features'] = selected_features
+        st.session_state[f'{selected_ticker}_selected_features'] = list(X_final.columns)
 
     else:
         st.write("Please select a ticker to proceed.")
+
     # Add a single expander for detailed explanation
     with st.expander("Detailed Explanation of Stepwise Regression"):
         st.markdown("""
         ### Stepwise Regression: What We Do
-        - **Purpose**: Select the most significant features for predicting stock returns using stepwise regression.
+        - **Purpose**: Select the most significant features for predicting stock returns using stepwise regression followed by backward elimination.
         - **Process**:
-          1. Start with either no features (forward selection) or all features (backward elimination).
-          2. Add or remove features one by one based on their statistical significance (p-values).
+          1. **Stepwise Selection**: Start with either no features (forward selection) or all features (backward elimination) and iteratively add or remove predictors based on minimizing MSE.
+          2. **Backward Elimination**: After stepwise selection, iteratively remove the least significant predictors (highest p-values) until all remaining variables are statistically significant.
         - **Key Variables**:
           - **Macroeconomic Variables**: Economic indicators like GDP Growth, Unemployment Rate, etc.
           - **Stock-Specific Features**: Technical indicators (RSI, Moving Averages) and financial ratios (Debt-to-Equity, ROE, ROA).
@@ -234,9 +256,11 @@ def stepwise_regression():
 
         ### Benefits:
         - Reduces overfitting by selecting only the most relevant variables.
+        - Ensures statistical significance of predictors, enhancing model interpretability.
         - Simplifies the model without compromising much predictive power.
 
         ### Outputs:
         - Final selected features for each stock.
         - Updated models stored in the session state for further use.
         """)
+
