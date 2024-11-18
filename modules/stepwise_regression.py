@@ -127,7 +127,8 @@ def stepwise_regression():
         initial_r_squared = initial_model.rsquared
 
         st.subheader("Initial Model Summary (Before Stepwise Regression):")
-        st.text(initial_model.summary())
+        model_summ= initial_model.summary().as_text()
+        st.code(model_summ, language="text")
 
         # Standardize features
         scaler = StandardScaler()
@@ -177,7 +178,7 @@ def stepwise_regression():
         final_r_squared = final_model.rsquared
 
         st.subheader("Final Model Summary (After Stepwise Regression):")
-        st.text(final_model.summary())
+        st.code(final_model.summary().as_text(), language="text")
 
         # Display R-squared comparison
         st.subheader("R² Value Comparison:")
