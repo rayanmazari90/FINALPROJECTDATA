@@ -101,7 +101,6 @@ def linear_regression_models():
         ### Key Steps:
         1. **Independent Variables**:
             - Macroeconomic indicators: GDP Growth, Unemployment Rate, CPI, etc.
-            - Stock-specific financial ratios: Debt-to-Equity Ratio, ROE, ROA, etc.
             - Sector trends: Returns of the sector ETF for the stock.
         2. **Dependent Variable**:
             - Stock returns for each stock, calculated as percentage changes in adjusted closing prices.

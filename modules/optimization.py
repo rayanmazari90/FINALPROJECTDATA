@@ -21,8 +21,8 @@ def investment_optimization():
     st.subheader("Input Investment Constraints")
     total_capital = st.number_input("Total Capital to Invest", min_value=1000, value=10000, step=100)
     max_loss = st.number_input("Maximum Acceptable Loss (%)", min_value=0, max_value=100, value=10) / 100
-    max_weight = st.number_input("Maximum Weight per Stock (%)", min_value=0.01, max_value=1.0, value=0.25)
-
+    #max_weight = st.number_input("Maximum Weight per Stock (%)", min_value=0.01, max_value=1.0, value=0.25)
+    max_weight=0.25
     # Select the last row for predictions
     last_row = ml_data.iloc[-1:]
 
@@ -120,7 +120,7 @@ def investment_optimization():
 
     # Validate data for optimization
     st.write("Predicted Returns (Last Row):", predicted_returns)
-    st.write("Risks (Standard Deviation):", risks)
+    #st.write("Risks (Standard Deviation):", risks)
     st.write("Max Loss Constraint:", max_loss)
 
     # Ensure predicted returns and risk values are valid
@@ -176,15 +176,16 @@ def investment_optimization():
         st.subheader("Key Metrics")
         st.write(f"**Expected Portfolio Return:** ${expected_return:.2f}")
         st.write(f"**Portfolio Return Range (95% Confidence Interval):** [${portfolio_lower_bound:.2f}, ${portfolio_upper_bound:.2f}]")
-        st.write(f"**Portfolio Risk (Standard Deviation):** {portfolio_risk:.2%}")
+        #st.write(f"**Portfolio Risk (Standard Deviation):** {portfolio_risk:.2%}")
 
     else:
         st.error(f"Optimization failed. Status: {problem.status}")
 
     # Add a dropdown to explain the optimization process
     # Add a dropdown to explain the optimization process
+    """ 
     with st.expander("Explanation and Formulas"):
-        st.markdown("""
+        st.markdown(
         ### Procedure Explanation
         1. **Linear Regression Models**: Each stock uses a linear regression model to predict returns based on selected features.
         2. **Expected Return**: Predicted returns are computed for the last row of data using the regression coefficients and inputs.
@@ -193,7 +194,7 @@ def investment_optimization():
         5. **Optimization**: The portfolio is optimized using Linear Programming:
             - Maximize the lower bound of portfolio return.
             - Constrain risk based on the standard deviation of returns and user-defined maximum loss.
-        """)
+        )
 
         st.markdown("### Optimization Formula")
         st.markdown("**Objective Function:**")
@@ -204,3 +205,4 @@ def investment_optimization():
         st.latex(r"\text{Weight}_i \geq 0 \quad \forall i \quad \text{(No Short Selling)}")
         st.latex(r"\text{Weight}_i \leq \text{Max Weight per Stock} \quad \forall i \quad \text{(Diversification Constraint)}")
         st.latex(r"\sqrt{\sum_{i=1}^{n} (\text{Risk}_i \cdot \text{Weight}_i)^2} \leq \text{Max Loss} \quad \text{(Risk Constraint)}")
+    """ 

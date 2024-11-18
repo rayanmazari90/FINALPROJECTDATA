@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 def eda_feature_selection():
-    st.header("Exploratory Data Analysis (EDA) and Feature Selection")
+    st.header("Data Visualiation - Exploratory Data Analysis (EDA)")
 
     if 'ml_data' not in st.session_state:
         st.warning("Please run the Data Acquisition step first.")
@@ -55,12 +55,15 @@ def eda_feature_selection():
         # Show time series plots
         st.subheader("Time Series Plots")
         for var in selected_vars:
-            if var in ml_data.columns:
+            if var in ml_data.columns and 'Date' in ml_data.columns:
                 fig, ax = plt.subplots(figsize=(12, 4))
-                ml_data[var].plot(ax=ax)
+                ax.plot(pd.to_datetime(ml_data['Date']), ml_data[var], label=var)
                 ax.set_title(f'Time Series of {var}')
                 ax.set_xlabel('Date')
                 ax.set_ylabel(var)
+                ax.legend()
+                ax.grid(True)
+                plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
                 st.pyplot(fig)
 
         # Show correlation matrix
@@ -97,5 +100,5 @@ def eda_feature_selection():
         ### Multicollinearity and Its Impact
         - **Definition**: Multicollinearity occurs when two or more independent variables are highly correlated.
         - **Problem**: It can distort the coefficients in regression models, making them unreliable.
-        - **Solution**: Consider removing one of the correlated variables or using techniques like Principal Component Analysis (PCA) to reduce dimensionality.
+        - **Solution**: Considering removing one of the correlated variables or using techniques like stepwise regression for valid models.
         """)

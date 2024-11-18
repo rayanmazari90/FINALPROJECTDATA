@@ -76,11 +76,6 @@ def data_acquisition():
         - **Moving Averages (50, 200 Days)**: Smoothens price data to highlight trends.
         - **Relative Strength Index (RSI)**: Identifies overbought/oversold conditions.
 
-        ### Financial Ratios
-        - **Debt-to-Equity Ratio**: Measures leverage. High values indicate higher debt.
-        - **Return on Equity (ROE)**: Indicates profitability relative to equity.
-        - **Return on Assets (ROA)**: Measures asset efficiency in generating profit.
-
         ### Macroeconomic Indicators
         - **GDP Growth**: Measures economic expansion or contraction.
         - **Unemployment Rate**: Reflects labor market conditions.

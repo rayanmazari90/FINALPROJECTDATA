@@ -13,18 +13,31 @@ import matplotlib.pyplot as plt
 def backward_elimination(model, X, y, significance_level=0.05):
     """
     Perform backward elimination by iteratively removing the least significant variable.
+
+    Parameters:
+    - model: The fitted OLS model.
+    - X: Feature DataFrame.
+    - y: Target Series.
+    - significance_level: Threshold for p-value to retain variables.
+
+    Returns:
+    - model: The final fitted OLS model with significant variables.
+    - X: The DataFrame with only significant variables.
+    - removed_features: List of variables removed during elimination.
     """
+    removed_features = []  # Initialize list to track removed features
     while True:
         p_values = model.pvalues.drop('const', errors='ignore')
         max_pval = p_values.max()
         if max_pval > significance_level:
             excluded_var = p_values.idxmax()
+            removed_features.append(excluded_var)  # Track the removed variable
             X = X.drop(columns=[excluded_var])
             X_const = sm.add_constant(X)
             model = sm.OLS(y, X_const).fit()
         else:
             break
-    return model, X
+    return model, X, removed_features  # Return the list of removed features
 
 def stepwise_regression():
     st.header("Stepwise Regression for Feature Selection")
@@ -92,22 +105,26 @@ def stepwise_regression():
         )
 
         sfs.fit(X_scaled, y)
-        selected_features = X.columns[sfs.get_support()]
+        selected_features_stepwise = X.columns[sfs.get_support()].tolist()
+        removed_features_stepwise = X.columns[~sfs.get_support()].tolist()
 
         # Build initial model with selected features
-        X_selected = X[selected_features]
+        X_selected = X[selected_features_stepwise]
         X_selected_const = sm.add_constant(X_selected)
         initial_selected_model = sm.OLS(y, X_selected_const).fit()
 
-        # Perform backward elimination based on p-values
-        final_model, X_final = backward_elimination(initial_selected_model, X_selected, y)
+        # Perform backward elimination based on p-values and capture removed features
+        final_model, X_final, removed_features_backward = backward_elimination(initial_selected_model, X_selected, y)
 
-        # Store the final model details
+        # Store the final model details along with removed features and model summary
         st.session_state['ticker_models'][ticker] = {
             'intercept': final_model.params.get('const', 0.0),
             'coefficients': final_model.params.drop('const', errors='ignore').to_dict(),
             'features': list(X_final.columns),
-            'r_squared': final_model.rsquared
+            'r_squared': final_model.rsquared,
+            'removed_features_backward': removed_features_backward,
+            'removed_features_stepwise': removed_features_stepwise,
+            'model_summary': final_model.summary().as_text()
         }
 
     st.success("Stepwise Regression completed for all tickers!")
@@ -116,92 +133,35 @@ def stepwise_regression():
     selected_ticker = st.selectbox("Select a ticker for stepwise regression", high_r2_tickers)
 
     if selected_ticker:
-        y = ml_data[f'{selected_ticker}_Returns']
-        stock_specific_vars = [
-            f'{selected_ticker}_Debt_Equity',
-            f'{selected_ticker}_ROE',
-            f'{selected_ticker}_ROA',
-            f'{selected_ticker}_12M_Momentum',
-            f'{selected_ticker}_MA50',
-            f'{selected_ticker}_MA200',
-            f'{selected_ticker}_RSI'
-        ]
-        stock_specific_vars = [var for var in stock_specific_vars if var in ml_data.columns]
-        sector_var = sector_map[selected_ticker]
-        X_vars = macro_vars + stock_specific_vars + ([sector_var] if sector_var in ml_data.columns else [])
+        # Retrieve model details from session state
+        model_details = st.session_state['ticker_models'][selected_ticker]
 
-        X = ml_data[X_vars].copy()
+        y = ml_data[f'{selected_ticker}_Returns']
+        X = ml_data[macro_vars + stock_specific_vars + ([sector_map[selected_ticker]] if sector_map[selected_ticker] in ml_data.columns else [])].copy()
         X = X.dropna()
         y = y.loc[X.index]
 
-        # Build initial model with all variables
-        X_with_const = sm.add_constant(X)
-        initial_model = sm.OLS(y, X_with_const).fit()
-        initial_r_squared = initial_model.rsquared
-
-        st.subheader("Initial Model Summary (Before Stepwise Regression):")
-        model_summ = initial_model.summary().as_text()
-        st.code(model_summ, language="text")
-
-        # Standardize features
-        scaler = StandardScaler()
-        X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns, index=X.index)
-
-        # Linear regression model for feature selection
-        lr = LinearRegression()
-
-        # Option to select direction of stepwise regression
-        direction = st.selectbox("Select stepwise regression direction", ["forward", "backward"])
-
-        # Define the SequentialFeatureSelector
-        if direction == "forward":
-            sfs = SequentialFeatureSelector(
-                lr,
-                n_features_to_select="auto",
-                direction='forward',
-                scoring='neg_mean_squared_error',
-                cv=5,
-                n_jobs=-1
-            )
-        else:
-            sfs = SequentialFeatureSelector(
-                lr,
-                n_features_to_select="auto",
-                direction='backward',
-                scoring='neg_mean_squared_error',
-                cv=5,
-                n_jobs=-1
-            )
-
-        # Perform stepwise regression
-        with st.spinner("Performing stepwise regression..."):
-            sfs.fit(X_scaled, y)
-            selected_features = X.columns[sfs.get_support()]
-            removed_features = X.columns[~sfs.get_support()]
-
-        st.subheader("Selected Features After Stepwise Regression:")
-        st.write(list(selected_features))
-        st.subheader("Removed Features:")
-        st.write(list(removed_features))
-
-        # Build model with selected features
-        X_selected = X[selected_features]
-        X_selected_const = sm.add_constant(X_selected)
-        initial_selected_model = sm.OLS(y, X_selected_const).fit()
-
-        # Perform backward elimination based on p-values
-        final_model, X_final = backward_elimination(initial_selected_model, X_selected, y)
-
         st.subheader("Final Model Summary (After Stepwise Regression and Backward Elimination):")
-        st.code(final_model.summary().as_text(), language="text")
+        st.code(model_details['model_summary'], language="text")
+
+        st.subheader("Selected Features:")
+        st.write(model_details['features'])
+
+        st.subheader("Removed Features During Stepwise Regression:")
+        st.write(model_details.get('removed_features_stepwise', []), model_details.get('removed_features_backward', []))
+
 
         # Display R-squared comparison
         st.subheader("R² Value Comparison:")
-        st.write(f"**Before Stepwise Regression:** R² = {initial_r_squared:.6f}")
-        st.write(f"**After Stepwise Regression:** R² = {final_model.rsquared:.6f}")
+        st.write(f"**After Stepwise Regression and Backward Elimination:** R² = {model_details['r_squared']:.6f}")
 
-        # Predict and evaluate
-        predictions = final_model.predict(sm.add_constant(X_final))
+        # Reconstruct X_final from stored features
+        X_final = X[model_details['features']]
+        X_final_const = sm.add_constant(X_final)
+        predictions = X_final_const.dot(
+            [model_details['intercept']] + [model_details['coefficients'][col] for col in X_final.columns]
+        )
+
         mae = mean_absolute_error(y, predictions)
         rmse = np.sqrt(mean_squared_error(y, predictions))
         st.write(f"**Mean Absolute Error (MAE):** {mae:.6f}")
@@ -234,10 +194,6 @@ def stepwise_regression():
         # Render the plot in Streamlit
         st.pyplot(fig)
 
-        # Store the final model and selected features in session state
-        st.session_state[f'{selected_ticker}_stepwise_model'] = final_model
-        st.session_state[f'{selected_ticker}_selected_features'] = list(X_final.columns)
-
     else:
         st.write("Please select a ticker to proceed.")
 
@@ -247,7 +203,7 @@ def stepwise_regression():
         ### Stepwise Regression: What We Do
         - **Purpose**: Select the most significant features for predicting stock returns using stepwise regression followed by backward elimination.
         - **Process**:
-          1. **Stepwise Selection**: Start with either no features (forward selection) or all features (backward elimination) and iteratively add or remove predictors based on minimizing MSE.
+          1. **Stepwise Selection**: Start with no features (forward selection) and iteratively add predictors based on minimizing MSE.
           2. **Backward Elimination**: After stepwise selection, iteratively remove the least significant predictors (highest p-values) until all remaining variables are statistically significant.
         - **Key Variables**:
           - **Macroeconomic Variables**: Economic indicators like GDP Growth, Unemployment Rate, etc.
@@ -263,4 +219,3 @@ def stepwise_regression():
         - Final selected features for each stock.
         - Updated models stored in the session state for further use.
         """)
-
