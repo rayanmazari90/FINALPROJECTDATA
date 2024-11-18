@@ -162,10 +162,10 @@ def stepwise_regression():
             [model_details['intercept']] + [model_details['coefficients'][col] for col in X_final.columns]
         )
 
-        mae = mean_absolute_error(y, predictions)
-        rmse = np.sqrt(mean_squared_error(y, predictions))
-        st.write(f"**Mean Absolute Error (MAE):** {mae:.6f}")
-        st.write(f"**Root Mean Squared Error (RMSE):** {rmse:.6f}")
+        #mae = mean_absolute_error(y, predictions)
+        #rmse = np.sqrt(mean_squared_error(y, predictions))
+        #st.write(f"**Mean Absolute Error (MAE):** {mae:.6f}")
+        #st.write(f"**Root Mean Squared Error (RMSE):** {rmse:.6f}")
 
         st.subheader("Actual vs. Predicted Returns After Stepwise Regression and Backward Elimination")
         fig, ax = plt.subplots(figsize=(12, 6))
