@@ -67,7 +67,7 @@ def linear_regression_models():
             if selected_ticker:
                 st.write(f"Model Summary for {selected_ticker}:")
                 model_summary = predictions_dict[selected_ticker]['model'].summary().as_text()
-                st.text(model_summary)
+                st.code(model_summary, language='text')
 
                 # Calculate evaluation metrics
                 y_actual = predictions_dict[selected_ticker]['actual']
