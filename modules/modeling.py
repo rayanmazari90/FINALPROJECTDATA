@@ -66,7 +66,8 @@ def linear_regression_models():
             selected_ticker = st.selectbox("Select a ticker to view model details", available_tickers)
             if selected_ticker:
                 st.write(f"Model Summary for {selected_ticker}:")
-                st.text(predictions_dict[selected_ticker]['model'].summary())
+                model_summary = predictions_dict[selected_ticker]['model'].summary().as_text()
+                st.text(model_summary)
 
                 # Calculate evaluation metrics
                 y_actual = predictions_dict[selected_ticker]['actual']
