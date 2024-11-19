@@ -204,9 +204,8 @@ def stepwise_regression():
         ### Stepwise Regression: What We Do
         - **Purpose**: Select the most significant features for predicting stock returns using stepwise regression followed by backward elimination.
         - **Process**:
-          1. **Stepwise Selection**: Start with no features (forward selection) and iteratively add predictors based on minimizing MSE.
-          2. **Backward Elimination**: After stepwise selection, iteratively remove the least significant predictors (highest p-values) until all remaining variables are statistically significant.
-        - **Key Variables**:
+          1. **Stepwise Selection**: Start with no features (forward selection) and iteratively add predictors based on maximising R2.
+         
           - **Macroeconomic Variables**: Economic indicators like GDP Growth, Unemployment Rate, etc.
           - **Stock-Specific Features**: Technical indicators (RSI, Moving Averages) and financial ratios (Debt-to-Equity, ROE, ROA).
           - **Sector Variables**: Performance of sector ETFs.
