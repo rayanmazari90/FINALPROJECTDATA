@@ -156,7 +156,8 @@ def stepwise_regression():
         st.write(f"**After Stepwise Regression and Backward Elimination:** R² = {model_details['r_squared']:.6f}")
 
         # Reconstruct X_final from stored features
-        X_final = X[model_details['features']]
+        available_features = [feature for feature in model_details['features'] if feature in X.columns]
+        X_final = X[available_features]
         X_final_const = sm.add_constant(X_final)
         predictions = X_final_const.dot(
             [model_details['intercept']] + [model_details['coefficients'][col] for col in X_final.columns]
@@ -167,7 +168,7 @@ def stepwise_regression():
         #st.write(f"**Mean Absolute Error (MAE):** {mae:.6f}")
         #st.write(f"**Root Mean Squared Error (RMSE):** {rmse:.6f}")
 
-        st.subheader("Actual vs. Predicted Returns After Stepwise Regression and Backward Elimination")
+        st.subheader("Actual vs. Predicted Returns After Stepwise Regression")
         fig, ax = plt.subplots(figsize=(12, 6))
 
         # Align actual and predicted values with the Date column
