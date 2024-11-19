@@ -141,7 +141,7 @@ def stepwise_regression():
         X = X.dropna()
         y = y.loc[X.index]
 
-        st.subheader("Final Model Summary (After Stepwise Regression and Backward Elimination):")
+        st.subheader("Final Model Summary (After Stepwise Regression):")
         st.code(model_details['model_summary'], language="text")
 
         st.subheader("Selected Features:")
@@ -153,7 +153,7 @@ def stepwise_regression():
 
         # Display R-squared comparison
         st.subheader("R² Value Comparison:")
-        st.write(f"**After Stepwise Regression and Backward Elimination:** R² = {model_details['r_squared']:.6f}")
+        st.write(f"**After Stepwise Regression:** R² = {model_details['r_squared']:.6f}")
 
         # Reconstruct X_final from stored features
         available_features = [feature for feature in model_details['features'] if feature in X.columns]
